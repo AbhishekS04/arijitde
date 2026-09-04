@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { KnobSlider } from "@/components/ui/knob-slider";
+import CalculatorsCarousel from "@/components/CalculatorsCarousel";
 import SoftBoxBlurBg from "@/components/SoftBoxBlurBg";
 import LightTunnel from "@/components/LightTunnel";
 import GradualBlur from "@/components/GradualBlur";
@@ -340,8 +342,9 @@ export default function Home() {
       setContactName("");
       setContactEmail("");
       setContactMessage("");
-    } catch (err: any) {
-      setContactError(err.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setContactError(msg);
     } finally {
       setContactSubmitting(false);
     }
@@ -425,6 +428,31 @@ export default function Home() {
   const [expandedOption, setExpandedOption] = useState<string>("why-us");
   const [serviceCategory, setServiceCategory] = useState<"investments" | "insurance">("investments");
   const [selectedArchetype, setSelectedArchetype] = useState<string>("tiger");
+  const [riskScore, setRiskScore] = useState<number>(65);
+  const lastArchetypeRef = useRef("tiger");
+
+  const handleSelectArchetype = useCallback((id: string) => {
+    setSelectedArchetype(id);
+    lastArchetypeRef.current = id;
+    const targetScore = archetypesMap[id]?.score ?? 65;
+    setRiskScore(targetScore);
+  }, []);
+
+  const handleKnobChange = useCallback((newScore: number) => {
+    setRiskScore(newScore);
+
+    let matched = "tiger";
+    if (newScore <= 35) matched = "elephant";
+    else if (newScore <= 55) matched = "deer";
+    else if (newScore <= 72) matched = "tiger";
+    else if (newScore <= 84) matched = "fox";
+    else matched = "lion";
+
+    if (lastArchetypeRef.current !== matched) {
+      lastArchetypeRef.current = matched;
+      setSelectedArchetype(matched);
+    }
+  }, []);
   const [activeHoverLevel1, setActiveHoverLevel1] = useState<string | null>(null);
   const [activeHoverLevel2, setActiveHoverLevel2] = useState<string | null>(null);
   const [mobileActiveLevel1, setMobileActiveLevel1] = useState<string | null>(null);
@@ -578,7 +606,7 @@ export default function Home() {
       sessionStorage.setItem("hasSeenPreloader", "true");
     }
 
-    let startTime = Date.now();
+    const startTime = Date.now();
     const duration = 5000; // 5 seconds preloader duration
 
     const animate = () => {
@@ -726,12 +754,11 @@ export default function Home() {
                 
                 <div className="flex flex-col items-center w-full">
                   {/* Portrait with Crisp Framing & Soft Ambient Depth */}
-                  <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-[28px] border-2 border-white/90 shadow-[0_12px_30px_rgba(0,0,0,0.08)] overflow-hidden bg-card mb-4 group-hover:scale-[1.02] transition-transform duration-300">
+                  <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-[28px] border-2 border-white/90 shadow-[0_12px_30px_rgba(0,0,0,0.08)] overflow-hidden bg-card mb-4">
                     <img
-                      src="/assets/me.jpeg"
+                      src="/20260702_171545.webp"
                       alt="Arijit De"
-                      className="w-full h-full object-cover object-[center_20%] select-none pointer-events-none"
-                      style={{ imageRendering: 'auto' }}
+                      className="w-full h-full object-cover object-[center_47%] select-none pointer-events-none"
                     />
                   </div>
 
@@ -976,7 +1003,7 @@ export default function Home() {
                                   Life Insurance & Capital Shield
                                 </h4>
                                 <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
-                                  Shielding your family's future, safeguarding physical assets, and providing health emergency liquidity across generations.
+                                  Shielding your family&apos;s future, safeguarding physical assets, and providing health emergency liquidity across generations.
                                 </p>
                               </div>
 
@@ -1161,7 +1188,7 @@ export default function Home() {
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => setSelectedArchetype(item.id)}
+                        onClick={() => handleSelectArchetype(item.id)}
                         className={`text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all duration-200 cursor-pointer select-none flex items-center gap-1.5 ${
                           selectedArchetype === item.id
                             ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
@@ -1190,8 +1217,8 @@ export default function Home() {
             {(() => {
               const current = archetypesMap[selectedArchetype] || archetypesMap.tiger;
               return (
-                <div className="flex-1 min-h-[320px] flex items-center justify-center relative">
-                  <div className="w-full h-full min-h-[320px] p-6 sm:p-7 bg-gradient-to-br from-white/95 via-white/85 to-white/70 backdrop-blur-2xl rounded-3xl border border-white shadow-[0_25px_50px_rgba(0,0,0,0.08)] flex flex-col justify-between gap-5 relative group overflow-hidden transition-all duration-300">
+                <div className="flex-1 flex items-center justify-center relative">
+                  <div className="w-full max-w-[380px] h-[370px] p-6 bg-gradient-to-br from-white/95 via-white/85 to-white/70 backdrop-blur-2xl rounded-3xl border border-white shadow-[0_20px_45px_rgba(0,0,0,0.06)] flex flex-col justify-between relative group overflow-hidden transition-all duration-300">
                     {/* Dynamic Ambient Background Glow */}
                     <div
                       className="absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl opacity-25 transition-all duration-700 pointer-events-none"
@@ -1202,19 +1229,21 @@ export default function Home() {
                       style={{ backgroundColor: current.color }}
                     />
 
-                    {/* Header */}
-                    <div className="flex justify-between items-center border-b border-border/50 pb-3 relative z-10">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full animate-pulse shadow-xs"
-                          style={{ backgroundColor: current.color }}
-                        />
-                        <span className="text-xs font-bold text-primary font-clash uppercase tracking-wide">
-                          ARCHETYPE DIAGNOSTIC
-                        </span>
+                    {/* Clean Fixed Header: Archetype Identity & Category */}
+                    <div className="flex justify-between items-center border-b border-border/40 pb-2.5 min-h-[46px] relative z-10">
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        <span className="text-xl shrink-0">{current.emoji}</span>
+                        <div className="min-w-0">
+                          <h4 className="text-sm sm:text-base font-bold text-primary font-chillax leading-tight whitespace-nowrap truncate">
+                            {current.name}
+                          </h4>
+                          <span className="text-[10px] font-mono text-muted-foreground block font-medium whitespace-nowrap truncate">
+                            {current.badge}
+                          </span>
+                        </div>
                       </div>
                       <span
-                        className="text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border shadow-2xs"
+                        className="shrink-0 text-[9px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border shadow-2xs whitespace-nowrap"
                         style={{
                           backgroundColor: `${current.color}15`,
                           color: current.color,
@@ -1225,154 +1254,17 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* Calibrated Speedometer SVG with Richer Colors */}
-                    <div className="relative w-60 h-32 mx-auto flex items-center justify-center select-none z-10">
-                      <svg className="w-full h-full overflow-visible" viewBox="0 0 220 120">
-                        <defs>
-                          <linearGradient id="riskGradPop" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#10B981" />
-                            <stop offset="30%" stopColor="#06B6D4" />
-                            <stop offset="65%" stopColor="#F59E0B" />
-                            <stop offset="100%" stopColor="#EF4444" />
-                          </linearGradient>
-                          <filter id="dialGlow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={current.color} floodOpacity="0.35" />
-                          </filter>
-                        </defs>
-
-                        {/* Background rail */}
-                        <path
-                          d="M 40,98 A 70,70 0 0 1 180,98"
-                          fill="transparent"
-                          stroke="rgba(0, 0, 0, 0.08)"
-                          strokeWidth="11"
-                          strokeLinecap="round"
-                        />
-
-                        {/* Active high-contrast gradient arc */}
-                        <path
-                          d="M 40,98 A 70,70 0 0 1 180,98"
-                          fill="transparent"
-                          stroke="url(#riskGradPop)"
-                          strokeWidth="11"
-                          strokeLinecap="round"
-                          strokeDasharray="219.9"
-                          strokeDashoffset={219.9 * (1 - current.score / 100)}
-                          filter="url(#dialGlow)"
-                          style={{
-                            transition: "stroke-dashoffset 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                          }}
-                        />
-
-                        {/* End Markers */}
-                        <text x="26" y="114" textAnchor="middle" className="fill-muted-foreground font-mono text-[10px] font-bold">
-                          0
-                        </text>
-                        <text x="194" y="114" textAnchor="middle" className="fill-muted-foreground font-mono text-[10px] font-bold">
-                          100
-                        </text>
-
-                        {/* Precision Needle & Glow Hub */}
-                        <g
-                          style={{
-                            transform: `rotate(${current.needleAngle}deg)`,
-                            transformOrigin: "110px 98px",
-                            transition: "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)"
-                          }}
-                        >
-                          <line
-                            x1="110"
-                            y1="98"
-                            x2="110"
-                            y2="36"
-                            stroke={current.color}
-                            strokeWidth="3.5"
-                            strokeLinecap="round"
-                            style={{ filter: `drop-shadow(0 1px 4px ${current.color})` }}
-                          />
-                          <circle cx="110" cy="98" r="7" fill="#ffffff" stroke="rgba(0,0,0,0.12)" strokeWidth="1.5" />
-                          <circle cx="110" cy="98" r="4" fill={current.color} />
-                        </g>
-                      </svg>
-                    </div>
-
-                    {/* Dedicated Archetype Title & Risk Score Readout */}
-                    <div className="flex flex-col items-center text-center -mt-2 relative z-10">
-                      <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/95 border border-border/60 shadow-xs backdrop-blur-md">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full animate-pulse"
-                          style={{ backgroundColor: current.color }}
-                        />
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">
-                          Risk Score:
-                        </span>
-                        <span
-                          className="text-xs font-mono font-black"
-                          style={{ color: current.color }}
-                        >
-                          {current.score} / 100
-                        </span>
-                      </div>
-                      <h4 className="text-lg font-bold text-primary font-chillax mt-1.5 flex items-center gap-2">
-                        <span className="text-xl">{current.emoji}</span>
-                        <span>{current.name}</span>
-                      </h4>
-                    </div>
-
-                    {/* Breakdown Badges */}
-                    <div className="grid grid-cols-3 gap-2 relative z-10">
-                      {current.breakdown.map((b, idx) => (
-                        <div
-                          key={idx}
-                          className={`p-2.5 rounded-2xl flex flex-col items-center gap-0.5 text-center transition-all duration-200 border ${
-                            b.active
-                              ? "bg-primary text-primary-foreground border-primary shadow-md scale-102"
-                              : "bg-white/80 text-foreground border-white/90 hover:bg-white"
-                          }`}
-                        >
-                          <span className="text-[10px] font-mono opacity-80 block">{b.label}</span>
-                          <span className="text-xs font-bold font-chillax">{b.pct}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Active Recommendation Card */}
-                    <div
-                      className="border rounded-2xl p-3.5 flex items-center justify-between gap-3 relative z-10 shadow-xs backdrop-blur-md transition-all duration-300"
-                      style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.85)",
-                        borderColor: `${current.color}30`
-                      }}
-                    >
-                      <div className="text-left flex items-center gap-2.5">
-                        <div
-                          className="w-9 h-9 rounded-xl border flex items-center justify-center text-lg shadow-xs select-none transition-all duration-300"
-                          style={{
-                            backgroundColor: `${current.color}15`,
-                            borderColor: `${current.color}35`
-                          }}
-                        >
-                          {current.emoji}
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-mono text-muted-foreground uppercase block tracking-wider font-bold">
-                            Primary Archetype
-                          </span>
-                          <span className="text-xs sm:text-sm font-bold text-primary font-chillax leading-tight">
-                            {current.name}
-                          </span>
-                        </div>
-                      </div>
-                      <span
-                        className="text-[9px] px-2.5 py-1 rounded-lg font-mono font-bold uppercase tracking-wider select-none border shadow-2xs"
-                        style={{
-                          backgroundColor: `${current.color}15`,
-                          color: current.color,
-                          borderColor: `${current.color}35`
-                        }}
-                      >
-                        {current.badge}
-                      </span>
+                    {/* Center: Larger, Highly-Visualized Futuristic Knob */}
+                    <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-1">
+                      <KnobSlider
+                        value={riskScore}
+                        onChange={handleKnobChange}
+                        min={0}
+                        max={100}
+                        size={240}
+                        color={current.color}
+                        label="RISK INDEX"
+                      />
                     </div>
                   </div>
                 </div>
@@ -1523,127 +1415,10 @@ export default function Home() {
         </ScrollBlurReveal>
       </div>
 
-      {/* Calculators Hub Section */}
-      <div id="calculators" className="w-full relative z-10 py-16 px-6 bg-transparent">
+      {/* Calculators Hub Section (Compact Glassmorphic Carousel) */}
+      <div id="calculators" className="w-full relative z-10 py-12 px-6 bg-transparent">
         <ScrollBlurReveal className="w-full max-w-5xl mx-auto">
-          <div className="text-left mb-12">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-primary/10 bg-white/60 text-xs font-semibold text-primary font-mono select-none shadow-xs mb-3">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              <span>INTERACTIVE TOOLS</span>
-            </div>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-primary font-chillax leading-tight">
-              Precision Financial Calculators
-            </h2>
-            <p className="text-muted-foreground text-sm leading-relaxed font-sans font-medium mt-3 max-w-2xl">
-              Use our suite of interactive financial calculators to project systematic investments, model recurring deposits, optimize fees, and visualize prepayment schedules.
-            </p>
-          </div>
-
-          {/* Calculator Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: TrendingUp,
-                color: "text-emerald-600 bg-emerald-50 border-emerald-200",
-                title: "SIP Calculator",
-                desc: "Model your systematic investments and project future returns based on compounding growth.",
-                href: "/sip-calculator"
-              },
-              {
-                icon: Zap,
-                color: "text-amber-600 bg-amber-50 border-amber-200",
-                title: "Step-up SIP Calculator",
-                desc: "Calculate how stepping up your monthly contributions annually can exponentially accelerate wealth creation.",
-                href: "/step-up-sip-calculator"
-              },
-              {
-                icon: Coins,
-                color: "text-sky-600 bg-sky-50 border-sky-200",
-                title: "Lumpsum Calculator",
-                desc: "Project the compounding growth of a one-time principal investment over any tenure.",
-                href: "/lumpsum-calculator"
-              },
-              {
-                icon: Clock,
-                color: "text-purple-600 bg-purple-50 border-purple-200",
-                title: "SWP Calculator",
-                desc: "Calculate how long your retirement corpus will last or find out what corpus is required for your desired monthly income.",
-                href: "/swp-calculator"
-              },
-              {
-                icon: Flame,
-                color: "text-rose-600 bg-rose-50 border-rose-200",
-                title: "Inflation Calculator",
-                desc: "Visualize the future cost of your goals adjusted for inflation and determine the monthly SIP needed to reach them.",
-                href: "/inflation-calculator"
-              },
-              {
-                icon: Briefcase,
-                color: "text-teal-600 bg-teal-50 border-teal-200",
-                title: "SIF Calculator",
-                desc: "Model Specialized Investment Fund compounding returns using target hurdle rates and top-ups.",
-                href: "/sif-calculator"
-              },
-              {
-                icon: Landmark,
-                color: "text-blue-600 bg-blue-50 border-blue-200",
-                title: "Fixed Deposit (FD)",
-                desc: "Compute fixed deposit returns with quarterly compounding interest.",
-                href: "/fd-calculator"
-              },
-              {
-                icon: PiggyBank,
-                color: "text-pink-600 bg-pink-50 border-pink-200",
-                title: "Recurring Deposit (RD)",
-                desc: "Estimate recurring deposit maturity values based on quarterly compounded interest.",
-                href: "/rd-calculator"
-              },
-              {
-                icon: CreditCard,
-                color: "text-cyan-600 bg-cyan-50 border-cyan-200",
-                title: "EMI Calculator",
-                desc: "Calculate monthly payments and total interest outgo for any home, car, or personal loan.",
-                href: "/emi-calculator"
-              },
-              {
-                icon: Scale,
-                color: "text-orange-600 bg-orange-50 border-orange-200",
-                title: "Loan Prepayment",
-                desc: "Visualize prepayment schedules to see how much interest and tenure you can save.",
-                href: "/loan-calculator"
-              }
-            ].map((calc, i) => {
-              const Icon = calc.icon;
-              return (
-                <a
-                  key={i}
-                  href={calc.href}
-                  className="group flex flex-col justify-between p-6 sm:p-7 bg-white/45 backdrop-blur-xl border border-white/70 hover:border-primary/40 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_45px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-300 text-left relative overflow-hidden"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-5">
-                      <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center ${calc.color} transition-transform duration-300 group-hover:scale-110`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <span className="text-[11px] font-mono font-bold text-muted-foreground bg-white/60 border border-white/80 px-2.5 py-1 rounded-full">
-                        {(i + 1) < 10 ? '0' : ''}{i + 1}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-bold text-primary font-chillax mb-2 group-hover:text-[#3A8293] transition-colors duration-300">
-                      {calc.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed font-sans font-medium mb-6">
-                      {calc.desc}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-primary tracking-wider uppercase font-mono group-hover:text-primary">
-                    <span>Calculate Now</span>
-                    <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1.5 transition-transform duration-200" />
-                  </div>
-                </a>
-              );
-            })}
-          </div>
+          <CalculatorsCarousel />
         </ScrollBlurReveal>
       </div>
 
@@ -1742,9 +1517,9 @@ export default function Home() {
                   <div className="flex flex-col items-center justify-center space-y-1.5">
                     <div className="w-14 h-14 rounded-full border-2 border-white shadow-md overflow-hidden shrink-0 bg-card">
                       <img
-                        src="/assets/me.jpeg"
+                        src="/20260702_171545.webp"
                         alt="Arijit De"
-                        className="w-full h-full object-cover object-[center_20%]"
+                        className="w-full h-full object-cover object-[center_42%]"
                       />
                     </div>
                     <h3 className="text-base font-bold font-chillax text-primary">Arijit De</h3>
@@ -2099,3 +1874,4 @@ export default function Home() {
     </main>
   );
 }
+
