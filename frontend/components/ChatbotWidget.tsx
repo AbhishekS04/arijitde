@@ -1,14 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Send, Loader2 } from "lucide-react";
+import { X, Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AIOrbFace from "@/components/smoothui/ai-orb-face";
+import { AIMessage } from "@/components/smoothui/ai-message";
+import { type AIState, useSimulatedAmplitude } from "@/components/smoothui/ai-core";
 
 interface Message {
   id: number;
   sender: "bot" | "user";
   text: string;
   options?: string[];
+  timestamp?: string;
 }
 
 interface ChatbotWidgetProps {
@@ -52,6 +56,10 @@ export default function ChatbotWidget({
 }: ChatbotWidgetProps) {
   const [mounted, setMounted] = useState(false);
   const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const [aiState, setAiState] = useState<AIState>("idle");
+  const stateTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const simulatedAmplitude = useSimulatedAmplitude(aiState);
 
   const isChatOpen = isOpen !== undefined ? isOpen : internalIsOpen;
   const setIsChatOpen = (open: boolean) => {
@@ -77,6 +85,13 @@ export default function ChatbotWidget({
  
   useEffect(() => {
     setMounted(true);
+    setMessages(prev => prev.map(m => m.timestamp ? m : {
+      ...m,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    }));
+    return () => {
+      if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
+    };
   }, []);
  
   // Auto scroll to bottom of messages
@@ -90,10 +105,13 @@ export default function ChatbotWidget({
 
   const sendUserMessage = async (userMessageText: string, currentMessagesState = messages) => {
     if (isTyping) return;
-    const userMsg: Message = { id: Date.now(), sender: "user", text: userMessageText };
+    const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const userMsg: Message = { id: Date.now(), sender: "user", text: userMessageText, timestamp: nowTime };
     const updatedMessages = [...currentMessagesState, userMsg];
     setMessages(updatedMessages);
     setIsTyping(true);
+    setAiState("thinking");
+    if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
 
     try {
       const token = localStorage.getItem("token");
@@ -117,17 +135,39 @@ export default function ChatbotWidget({
       });
 
       const data = await res.json();
+      const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
       if (data.success) {
-        setMessages(prev => [...prev, { id: Date.now() + 1, sender: "bot", text: data.text }]);
+        setMessages(prev => [...prev, { id: Date.now() + 1, sender: "bot", text: data.text, timestamp: botTime }]);
+        setAiState("done");
+        stateTimerRef.current = setTimeout(() => {
+          setAiState("idle");
+        }, 2600);
       } else {
-        setMessages(prev => [...prev, { id: Date.now() + 1, sender: "bot", text: data.error || "Failed to get response. Please try again." }]);
+        setMessages(prev => [...prev, { id: Date.now() + 1, sender: "bot", text: data.error || "Failed to get response. Please try again.", timestamp: botTime }]);
+        setAiState("error");
+        stateTimerRef.current = setTimeout(() => {
+          setAiState("idle");
+        }, 3200);
       }
     } catch (err) {
       console.error("Chat error:", err);
-      setMessages(prev => [...prev, { id: Date.now() + 1, sender: "bot", text: "Network error. Please check your connection and try again." }]);
+      const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      setMessages(prev => [...prev, { id: Date.now() + 1, sender: "bot", text: "Network error. Please check your connection and try again.", timestamp: botTime }]);
+      setAiState("error");
+      stateTimerRef.current = setTimeout(() => {
+        setAiState("idle");
+      }, 3200);
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const handleRetry = () => {
+    if (isTyping) return;
+    const lastUserMessage = [...messages].reverse().find(m => m.sender === "user");
+    if (lastUserMessage) {
+      sendUserMessage(lastUserMessage.text);
     }
   };
 
@@ -149,6 +189,18 @@ export default function ChatbotWidget({
     await sendUserMessage(userMessageText);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputVal(val);
+    if (!isTyping) {
+      if (val.trim().length > 0) {
+        setAiState("listening");
+      } else {
+        setAiState("idle");
+      }
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -160,19 +212,57 @@ export default function ChatbotWidget({
     >
       {/* Chatbot Modal */}
       {isChatOpen && (
-        <div className="w-80 md:w-96 h-[450px] md:h-[500px] mb-4 rounded-3xl border border-neutral-200 bg-white/70 backdrop-blur-2xl shadow-xl overflow-hidden flex flex-col transition-all duration-300 transform scale-100 opacity-100 origin-bottom-right">
+        <div className="w-80 md:w-96 h-[450px] md:h-[500px] mb-4 rounded-3xl border border-neutral-200 bg-white/75 backdrop-blur-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform scale-100 opacity-100 origin-bottom-right">
           {/* Header */}
-          <div className="px-5 py-4 bg-transparent border-b border-neutral-200 flex items-center justify-between">
+          <div className="px-5 py-3.5 bg-white/50 backdrop-blur-md border-b border-neutral-200 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
+              <div className="relative shrink-0 w-10 h-10 rounded-2xl bg-neutral-100/90 border border-neutral-200/90 flex items-center justify-center shadow-xs overflow-visible">
+                <AIOrbFace
+                  size={36}
+                  state={aiState}
+                  amplitude={simulatedAmplitude}
+                  gaze={true}
+                  aria-label={`Virtual Arijit is ${aiState}`}
+                />
+                <span
+                  className={cn(
+                    "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white shadow-xs",
+                    aiState === "error"
+                      ? "bg-rose-500"
+                      : aiState === "thinking"
+                      ? "bg-amber-400 animate-ping"
+                      : "bg-emerald-500"
+                  )}
+                />
+              </div>
               <div className="flex flex-col text-left">
-                <span className="text-sm font-bold text-primary tracking-wide font-clash">Virtual Arijit</span>
-                <span className="text-[10px] text-neutral-400 font-mono">AI AGENT • ONLINE</span>
+                <span className="text-sm font-bold text-primary tracking-wide font-clash flex items-center gap-1.5">
+                  Virtual Arijit
+                  {aiState === "done" && (
+                    <span className="text-[9px] font-mono font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+                      READY
+                    </span>
+                  )}
+                </span>
+                <span className="text-[10px] text-neutral-400 font-mono flex items-center gap-1.5">
+                  <span className="uppercase font-medium tracking-wider">
+                    {aiState === "thinking"
+                      ? "Thinking..."
+                      : aiState === "listening"
+                      ? "Listening..."
+                      : aiState === "done"
+                      ? "Response ready"
+                      : aiState === "error"
+                      ? "Connection issue"
+                      : "AI AGENT • ONLINE"}
+                  </span>
+                </span>
               </div>
             </div>
             <button
               onClick={() => setIsChatOpen(false)}
-              className="text-neutral-400 hover:text-primary transition duration-150 p-1 cursor-pointer"
+              className="text-neutral-400 hover:text-primary transition duration-150 p-1.5 rounded-full hover:bg-neutral-100/80 cursor-pointer"
+              aria-label="Close Chatbot"
             >
               <X className="w-5 h-5" />
             </button>
@@ -181,48 +271,74 @@ export default function ChatbotWidget({
           {/* Message List */}
           <div
             data-lenis-prevent
-            className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 scrollbar-thin scrollbar-thumb-border select-text"
+            className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-2 scrollbar-thin scrollbar-thumb-border select-text"
           >
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={cn(
-                  "max-w-[80%] flex flex-col gap-1.5",
-                  msg.sender === "user" ? "self-end" : "self-start"
-                )}
-              >
-                <div
-                  className={cn(
-                    "px-4 py-2.5 rounded-2xl text-sm leading-relaxed border text-left font-clash w-full whitespace-pre-line",
-                    msg.sender === "user"
-                      ? "bg-primary/10 border-primary/15 text-primary rounded-br-none"
-                      : "bg-neutral-100 border-neutral-200 text-neutral-800 rounded-bl-none"
-                  )}
+            {messages.map((msg, index) => {
+              const isAssistant = msg.sender === "bot";
+              const isLastBotMessage = isAssistant && index === messages.length - 1;
+
+              return (
+                <AIMessage
+                  key={msg.id}
+                  from={isAssistant ? "assistant" : "user"}
+                  avatar={
+                    isAssistant ? (
+                      <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-white border border-neutral-200/90 shadow-2xs">
+                        <AIOrbFace
+                          size={20}
+                          state={isLastBotMessage ? aiState : "idle"}
+                          amplitude={isLastBotMessage ? simulatedAmplitude : 0}
+                          gaze={true}
+                          aria-label="Virtual Arijit"
+                        />
+                      </div>
+                    ) : undefined
+                  }
+                  timestamp={msg.timestamp}
+                  copyText={msg.text}
+                  onRetry={isAssistant ? handleRetry : undefined}
+                  onVote={isAssistant ? () => {} : undefined}
                 >
-                  {formatMessageText(msg.text)}
-                </div>
-                {msg.options && (
-                  <div className="flex flex-wrap gap-2 mt-0.5 justify-start">
-                    {msg.options.map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => handleOptionClick(opt, msg.id)}
-                        className="px-3.5 py-1.5 bg-[#3A8293]/10 border border-[#3A8293]/20 hover:bg-[#3A8293] hover:text-white text-[#3A8293] rounded-full text-xs font-semibold font-clash transition duration-150 cursor-pointer select-none"
-                      >
-                        {opt}
-                      </button>
-                    ))}
+                  <div className="font-clash text-xs leading-relaxed whitespace-pre-line">
+                    {formatMessageText(msg.text)}
                   </div>
-                )}
-              </div>
-            ))}
+                  {msg.options && (
+                    <div className="flex flex-wrap gap-1.5 mt-2 justify-start">
+                      {msg.options.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => handleOptionClick(opt, msg.id)}
+                          className="px-2.5 py-1 bg-[#3A8293]/10 border border-[#3A8293]/20 hover:bg-[#3A8293] hover:text-white text-[#3A8293] rounded-full text-[11px] font-semibold font-clash transition duration-150 cursor-pointer select-none"
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </AIMessage>
+              );
+            })}
             {isTyping && (
-              <div className="bg-neutral-100 border border-neutral-200 text-neutral-500 px-4 py-2.5 rounded-2xl rounded-bl-none text-sm self-start flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce delay-[100ms]" />
-                <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce delay-[200ms]" />
-                <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce delay-[300ms]" />
-              </div>
+              <AIMessage
+                from="assistant"
+                avatar={
+                  <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-white border border-neutral-200/90 shadow-2xs">
+                    <AIOrbFace
+                      size={20}
+                      state="thinking"
+                      gaze={true}
+                      aria-label="Virtual Arijit is thinking"
+                    />
+                  </div>
+                }
+              >
+                <div className="flex items-center gap-1.5 py-1">
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce delay-[100ms]" />
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce delay-[200ms]" />
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce delay-[300ms]" />
+                </div>
+              </AIMessage>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -232,7 +348,13 @@ export default function ChatbotWidget({
             <input
               type="text"
               value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
+              onChange={handleInputChange}
+              onFocus={() => {
+                if (!isTyping && aiState === "idle") setAiState("listening");
+              }}
+              onBlur={() => {
+                if (!isTyping && aiState === "listening" && !inputVal.trim()) setAiState("idle");
+              }}
               placeholder="Ask about portfolio optimization, mutual funds, or LIC policies..."
               className="flex-1 px-4 py-2 text-xs rounded-xl bg-white/40 border border-neutral-200 text-neutral-800 focus:outline-none focus:border-primary placeholder-neutral-400 font-clash"
               disabled={isTyping}
@@ -241,6 +363,7 @@ export default function ChatbotWidget({
               type="submit"
               disabled={isTyping}
               className="w-9 h-9 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center transition duration-200 cursor-pointer disabled:opacity-50"
+              aria-label="Send message"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -248,22 +371,33 @@ export default function ChatbotWidget({
         </div>
       )}
 
-      {/* Speech Bubble */}
-      {!isChatOpen && (
-        <div className="absolute bottom-16 right-2 mb-2.5 bg-white/80 border border-primary/10 rounded-xl px-3 py-1.5 text-xs text-black tracking-wide shadow-lg whitespace-nowrap select-none font-clash">
-          Have portfolio questions? <span className="font-semibold text-primary">Ask Virtual Arijit here</span>
-        </div>
-      )}
 
       {/* Chatbot Toggle Button */}
       <button
+        type="button"
         onClick={() => setIsChatOpen(!isChatOpen)}
-        className="w-14 h-14 rounded-full bg-[#3A8293] hover:bg-[#3A8293]/90 text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+        aria-label={isChatOpen ? "Close Virtual Arijit assistant" : "Chat with Virtual Arijit AI Assistant"}
+        className={cn(
+          "relative w-16 h-16 rounded-full flex items-center justify-center cursor-pointer select-none",
+          isChatOpen
+            ? "bg-neutral-900 text-white shadow-xl hover:bg-neutral-800 hover:rotate-90 active:scale-95"
+            : "bg-white/85 backdrop-blur-xl border border-white/70 shadow-[0_12px_32px_rgba(58,130,147,0.25)]"
+        )}
       >
         {isChatOpen ? (
           <X className="w-6 h-6 stroke-[2.5]" />
         ) : (
-          <MessageSquare className="w-6 h-6 fill-current" />
+          <div className="relative w-full h-full flex items-center justify-center p-1">
+            <div className="absolute inset-1 rounded-full bg-gradient-to-tr from-[#3A8293]/15 via-transparent to-primary/10 pointer-events-none" />
+            <AIOrbFace
+              size={52}
+              state={aiState}
+              amplitude={simulatedAmplitude}
+              gaze={true}
+              aria-label="Virtual Arijit Assistant"
+            />
+            <span className="absolute bottom-1 right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
+          </div>
         )}
       </button>
     </div>

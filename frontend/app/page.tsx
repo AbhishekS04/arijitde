@@ -15,6 +15,7 @@ import { GoArrowDownRight } from "react-icons/go";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatbotWidget from "@/components/ChatbotWidget";
+import AIOrbFace from "@/components/smoothui/ai-orb-face";
 import BookCallModal from "@/components/BookCallModal";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { 
@@ -1121,7 +1122,16 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="w-full md:w-auto shrink-0 flex flex-col items-center justify-center p-6 bg-white/60 backdrop-blur-2xl border border-white/80 rounded-2xl md:min-w-[280px] shadow-sm text-center relative group">
+            <div className="w-full md:w-auto shrink-0 flex flex-col items-center justify-center p-6 bg-white/60 backdrop-blur-2xl border border-white/80 rounded-2xl md:min-w-[280px] shadow-sm text-center relative">
+              <div className="mb-3 relative flex items-center justify-center">
+                <div className="absolute inset-0 rounded-full bg-[#3A8293]/15 blur-xl pointer-events-none" />
+                <AIOrbFace
+                  size={76}
+                  state="idle"
+                  gaze={true}
+                  aria-label="Virtual Arijit Assistant Preview"
+                />
+              </div>
               <span className="text-base font-bold text-primary font-chillax">Try Virtual Arijit Now</span>
 
               <button
@@ -1131,20 +1141,6 @@ export default function Home() {
                 <Bot className="w-4 h-4" />
                 <span>Launch Assistant</span>
               </button>
-
-              {/* Bouncing Pointer Arrow towards Bottom-Right Chatbot Widget (visible on hover) */}
-              <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold select-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                <span className="text-muted-foreground font-mono text-[9px] uppercase tracking-wider">Look at bottom right</span>
-                <svg
-                  className="w-3.5 h-3.5 text-amber-500 animate-diagonal-bounce"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 19H9m10 0V9m0 10L5 5" />
-                </svg>
-              </div>
             </div>
           </div>
         </ScrollBlurReveal>
