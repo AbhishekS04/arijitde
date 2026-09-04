@@ -276,9 +276,9 @@ const servicesList = [
 
 export default function Home() {
   const [count, setCount] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [preloaderGone, setPreloaderGone] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scrollVideoContainerRef = useRef<HTMLDivElement | null>(null);
   const scrollVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -584,52 +584,45 @@ export default function Home() {
     }
     setCount(100);
     setTimeout(() => {
-      setPreloaderGone(true); // Unmounts preloader
+      setShowPreloader(false); // Unmounts preloader
+      import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
+        ScrollTrigger.refresh();
+      });
     }, 1000); // Match slide duration
   };
 
   useEffect(() => {
-    if (preloaderGone) {
-      import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
-        ScrollTrigger.refresh();
-      });
-    }
-  }, [preloaderGone]);
+    if (typeof window === "undefined") return;
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && sessionStorage.getItem("hasSeenPreloader")) {
-      setIsLoaded(true);
-      setPreloaderGone(true);
-      return;
-    }
-
-    if (typeof window !== "undefined") {
+    if (!sessionStorage.getItem("hasSeenPreloader")) {
       sessionStorage.setItem("hasSeenPreloader", "true");
+      setShowPreloader(true);
+      setIsLoaded(false);
+
+      const startTime = Date.now();
+      const duration = 5000; // 5 seconds preloader duration
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(100, Math.floor((elapsed / duration) * 100));
+
+        setCount(progress);
+
+        if (elapsed < duration) {
+          animationRef.current = requestAnimationFrame(animate);
+        } else {
+          triggerEnd();
+        }
+      };
+
+      animationRef.current = requestAnimationFrame(animate);
+
+      return () => {
+        if (animationRef.current) {
+          cancelAnimationFrame(animationRef.current);
+        }
+      };
     }
-
-    const startTime = Date.now();
-    const duration = 5000; // 5 seconds preloader duration
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(100, Math.floor((elapsed / duration) * 100));
-
-      setCount(progress);
-
-      if (elapsed < duration) {
-        animationRef.current = requestAnimationFrame(animate);
-      } else {
-        triggerEnd();
-      }
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
   }, []);
 
   return (
@@ -1785,7 +1778,7 @@ export default function Home() {
       <BookCallModal isOpen={isBookingModalOpen} onClose={() => setIsBookingModalOpen(false)} />
 
       {/* Preloader Overlay Screen (Slides down smoothly) */}
-      {!preloaderGone && (
+      {showPreloader && (
         <div
           id="preloader-screen"
           className={`fixed inset-0 z-50 flex flex-col justify-between bg-[#F2F0EF] p-12 md:p-20 transition-transform duration-[1000ms] ease-[cubic-bezier(0.85,0,0.15,1)] ${isLoaded ? "translate-y-full" : "translate-y-0"

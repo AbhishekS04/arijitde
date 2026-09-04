@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import {
   TrendingUp,
   Zap,
@@ -203,8 +204,13 @@ export default function CalculatorsCarousel() {
                   className="shrink-0 w-full sm:w-[calc((100%-20px)/2)] lg:w-[calc((100%-40px)/3)]"
                 >
                   {/* Stable Card (NO auto-scroll, NO hover jump) */}
-                  <a
+                  <Link
                     href={calc.href}
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        sessionStorage.setItem("savedHomeScrollY", String(window.scrollY));
+                      }
+                    }}
                     className="flex flex-col justify-between h-[215px] p-5 sm:p-6 bg-white/75 backdrop-blur-xl border border-white/90 rounded-3xl shadow-[0_8px_25px_rgba(0,0,0,0.03)] text-left relative overflow-hidden block transition-colors duration-200 hover:border-primary/40 hover:bg-white/95"
                   >
                     {/* Card Top */}
@@ -234,7 +240,7 @@ export default function CalculatorsCarousel() {
                       <span>Calculate Now</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </div>
-                  </a>
+                  </Link>
                 </div>
               );
             })}

@@ -43,7 +43,12 @@ export default function ScrollBlurReveal({
     );
 
     if (ref.current) {
-      observer.observe(ref.current);
+      const rect = ref.current.getBoundingClientRect();
+      if (rect.top < window.innerHeight + 250 && rect.bottom > -250) {
+        setIsIntersecting(true);
+      } else {
+        observer.observe(ref.current);
+      }
     }
 
     return () => {
