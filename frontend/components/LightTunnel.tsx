@@ -300,18 +300,43 @@ const LightTunnel: React.FC<LightTunnelProps> = ({
 
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
-      targetMouse = [
-        (e.clientX - rect.left) / rect.width,
-        1.0 - (e.clientY - rect.top) / rect.height,
-      ];
+      if (
+        rect.width <= 0 ||
+        rect.height <= 0 ||
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom
+      ) {
+        targetMouse = [0.5, 0.5];
+        return;
+      }
+      const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      const ny = Math.max(0, Math.min(1, 1.0 - (e.clientY - rect.top) / rect.height));
+      targetMouse = [nx, ny];
     };
 
     const handleMouseLeave = () => {
       targetMouse = [0.5, 0.5];
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    const handleScroll = () => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.bottom <= 0 || rect.top >= window.innerHeight) {
+        targetMouse = [0.5, 0.5];
+        currentMouse[0] = 0.5;
+        currentMouse[1] = 0.5;
+        if (program.uniforms.uMouseOffset?.value) {
+          const off = program.uniforms.uMouseOffset.value;
+          off[0] = 0;
+          off[1] = 0;
+        }
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
     document.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     let raf = 0;
     let isVisible = true;
@@ -351,8 +376,18 @@ const LightTunnel: React.FC<LightTunnelProps> = ({
       ([entry]) => {
         isVisible = entry.isIntersecting;
         if (isVisible) {
+          setSize();
+          targetMouse = [0.5, 0.5];
           tryStart();
         } else {
+          targetMouse = [0.5, 0.5];
+          currentMouse[0] = 0.5;
+          currentMouse[1] = 0.5;
+          if (program.uniforms.uMouseOffset?.value) {
+            const off = program.uniforms.uMouseOffset.value;
+            off[0] = 0;
+            off[1] = 0;
+          }
           tryStop();
         }
       },
@@ -377,8 +412,9 @@ const LightTunnel: React.FC<LightTunnelProps> = ({
       ro.disconnect();
       io.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('scroll', handleScroll);
       ctxMap.delete(container);
       try {
         container.removeChild(canvas);
