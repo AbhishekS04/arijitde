@@ -7,41 +7,6 @@ import { type ReactNode, useEffect, useState } from "react";
 const COPIED_RESET_MS = 1600;
 const ACTION_STAGGER_MS = 30;
 
-/**
- * The reveal is CSS so it needs no state and cannot desync from the pointer.
- * `motion`'s `animate` target was not being re-applied on state change here, and
- * a hover fade does not need a spring — a 200ms ease-out is the whole effect.
- */
-const ACTION_STYLES = `
-.ai-message-action {
-  opacity: 0;
-  transform: translateX(var(--ai-message-slide)) scale(0.9);
-  transition:
-    opacity 200ms cubic-bezier(.23, 1, .32, 1),
-    transform 200ms cubic-bezier(.23, 1, .32, 1),
-    background-color 150ms ease,
-    color 150ms ease;
-}
-.ai-message-action-agent { --ai-message-slide: -6px; }
-.ai-message-action-user { --ai-message-slide: 6px; }
-.ai-message-root:hover .ai-message-action,
-.ai-message-root:focus-within .ai-message-action {
-  opacity: 1;
-  transform: translateX(0) scale(1);
-}
-.ai-message-pop { animation: ai-message-pop 250ms cubic-bezier(.23, 1, .32, 1); }
-@keyframes ai-message-pop {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.25); }
-  100% { transform: scale(1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ai-message-action { transition-duration: 0ms; transition-delay: 0ms !important; transform: none; }
-  .ai-message-root:hover .ai-message-action,
-  .ai-message-root:focus-within .ai-message-action { transform: none; }
-  .ai-message-pop { animation: none; }
-}
-`;
 
 export type AIMessageAuthor = "user" | "assistant";
 
@@ -174,9 +139,6 @@ export const AIMessage = ({
         className
       )}
     >
-      {/* Static local stylesheet for origin-aware action sliding */}
-      <style dangerouslySetInnerHTML={{ __html: ACTION_STYLES }} />
-
       {avatar ? <div className="mt-0.5 shrink-0 select-none">{avatar}</div> : null}
 
       <div className={cn("flex min-w-0 max-w-[85%] flex-col gap-0.5", isUser && "items-end")}>
