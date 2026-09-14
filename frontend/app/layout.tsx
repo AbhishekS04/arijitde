@@ -96,6 +96,19 @@ export default function RootLayout({
         'font-clash',
       )}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if ((window.location.pathname === '/' || window.location.pathname === '') && !sessionStorage.getItem('hasSeenPreloader')) {
+                  document.documentElement.classList.add('preloader-active');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col overflow-x-hidden">
         <SessionSync />
         <Analytics />
