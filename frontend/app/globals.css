@@ -182,6 +182,17 @@
   }
 }
 
+@media (max-width: 1024px), (hover: none) {
+  .page-backdrop {
+    background-image: none !important;
+  }
+  :root, .dark {
+    --bg-glow-start: transparent;
+    --bg-glow-mid: transparent;
+    --bg-glow-end: transparent;
+  }
+}
+
 /* Decorative children stay aligned to the real viewport box, not the bled one. */
 .page-backdrop > .backdrop-inner {
   bottom: var(--backdrop-bleed);
@@ -350,4 +361,22 @@ html.lenis, html.lenis body {
   .ai-message-pop {
     animation: none;
   }
+}
+
+/* Zero-flicker preloader control */
+#preloader-screen {
+  display: none;
+}
+
+html.preloader-active #preloader-screen {
+  display: flex !important;
+}
+
+html.preloader-active,
+html.preloader-active body {
+  overflow: hidden !important;
+}
+
+html:not(.preloader-active) #preloader-screen {
+  display: none !important;
 }

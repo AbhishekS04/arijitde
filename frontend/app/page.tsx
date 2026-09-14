@@ -276,9 +276,9 @@ const servicesList = [
 
 export default function Home() {
   const [count, setCount] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [showPreloader, setShowPreloader] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scrollVideoContainerRef = useRef<HTMLDivElement | null>(null);
   const scrollVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -575,7 +575,7 @@ export default function Home() {
   }, []);
 
   const triggerEnd = () => {
-    setIsLoaded(true); // Slides preloader up
+    setIsLoaded(true); // Slides preloader down, reveals navbar
     if (videoRef.current) {
       videoRef.current.pause();
     }
@@ -585,6 +585,9 @@ export default function Home() {
     setCount(100);
     setTimeout(() => {
       setShowPreloader(false); // Unmounts preloader
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("preloader-active");
+      }
       import("gsap/ScrollTrigger").then(({ ScrollTrigger }) => {
         ScrollTrigger.refresh();
       });
@@ -594,39 +597,86 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if (!sessionStorage.getItem("hasSeenPreloader")) {
-      sessionStorage.setItem("hasSeenPreloader", "true");
-      setShowPreloader(true);
-      setIsLoaded(false);
-
-      const startTime = Date.now();
-      const duration = 5000; // 5 seconds preloader duration
-
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(100, Math.floor((elapsed / duration) * 100));
-
-        setCount(progress);
-
-        if (elapsed < duration) {
-          animationRef.current = requestAnimationFrame(animate);
-        } else {
-          triggerEnd();
-        }
-      };
-
-      animationRef.current = requestAnimationFrame(animate);
-
-      return () => {
-        if (animationRef.current) {
-          cancelAnimationFrame(animationRef.current);
-        }
-      };
+    if (sessionStorage.getItem("hasSeenPreloader")) {
+      setShowPreloader(false);
+      setIsLoaded(true);
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("preloader-active");
+      }
+      return;
     }
+
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.add("preloader-active");
+    }
+    sessionStorage.setItem("hasSeenPreloader", "true");
+    setShowPreloader(true);
+    setIsLoaded(false);
+
+    const startTime = Date.now();
+    const duration = 5000; // 5 seconds preloader duration
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(100, Math.floor((elapsed / duration) * 100));
+
+      setCount(progress);
+
+      if (elapsed < duration) {
+        animationRef.current = requestAnimationFrame(animate);
+      } else {
+        triggerEnd();
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, []);
 
   return (
     <main className="relative min-h-screen w-full bg-transparent text-foreground font-clash">
+      {/* Preloader Overlay Screen (Slides down smoothly) */}
+      {showPreloader && (
+        <div
+          id="preloader-screen"
+          className={`fixed inset-0 z-[9999] flex flex-col justify-between bg-[#F2F0EF] p-12 md:p-20 transition-transform duration-[1000ms] ease-[cubic-bezier(0.85,0,0.15,1)] ${isLoaded ? "translate-y-full" : "translate-y-0"
+            }`}
+        >
+          {/* Top Row: Brand Info */}
+          <div className="flex justify-between items-start w-full">
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col text-left">
+                <span className="text-sm font-bold text-primary tracking-wide">Arijit De ©2026</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Row: GIF player */}
+          <div className="flex-1 flex items-center justify-center w-full max-w-[280px] mx-auto my-4">
+            <img
+              src="/assets/video.gif"
+              alt="Preloader animation"
+              className="w-full h-auto rounded-xl"
+            />
+          </div>
+
+          {/* Bottom Row: Counter on the Right */}
+          <div className="flex justify-end items-end w-full">
+            {/* Display Counter */}
+            <div className="text-right">
+              <span className="text-8xl md:text-[10rem] font-bold text-primary tracking-tight font-clash select-none leading-none">
+                {count}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Fixed Background container with User's Gradient Theme */}
       <div className="page-backdrop fixed inset-0 z-0 select-none pointer-events-none">
         <SoftBoxBlurBg />
@@ -1776,43 +1826,6 @@ export default function Home() {
       <Footer footerRef={footerRef} onBookCallClick={() => setIsBookingModalOpen(true)} />
 
       <BookCallModal isOpen={isBookingModalOpen} onClose={() => setIsBookingModalOpen(false)} />
-
-      {/* Preloader Overlay Screen (Slides down smoothly) */}
-      {showPreloader && (
-        <div
-          id="preloader-screen"
-          className={`fixed inset-0 z-50 flex flex-col justify-between bg-[#F2F0EF] p-12 md:p-20 transition-transform duration-[1000ms] ease-[cubic-bezier(0.85,0,0.15,1)] ${isLoaded ? "translate-y-full" : "translate-y-0"
-            }`}
-        >
-          {/* Top Row: Brand Info */}
-          <div className="flex justify-between items-start w-full">
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col text-left">
-                <span className="text-sm font-bold text-primary tracking-wide">Arijit De ©2026</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Middle Row: GIF player */}
-          <div className="flex-1 flex items-center justify-center w-full max-w-[280px] mx-auto my-4">
-            <img
-              src="/assets/video.gif"
-              alt="Preloader animation"
-              className="w-full h-auto rounded-xl"
-            />
-          </div>
-
-          {/* Bottom Row: Counter on the Right */}
-          <div className="flex justify-end items-end w-full">
-            {/* Display Counter */}
-            <div className="text-right">
-              <span className="text-8xl md:text-[10rem] font-bold text-primary tracking-tight font-clash select-none leading-none">
-                {count}%
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Floating Chatbot Widget */}
       <ChatbotWidget
