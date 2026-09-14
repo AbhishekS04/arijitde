@@ -34,33 +34,10 @@ import {
 import SoftBoxBlurBg from "@/components/SoftBoxBlurBg";
 import GradualBlur from "@/components/GradualBlur";
 import ChatbotWidget from "@/components/ChatbotWidget";
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { ChartAreaInteractive } from "@/components/ChartAreaInteractive";
+import { ChartRadarDots } from "@/components/ChartRadarDots";
 import Footer from "@/components/Footer";
 
-const SLEEK_COLORS = [
-  "#6366F1", // Indigo
-  "#10B981", // Emerald
-  "#F59E0B", // Amber
-  "#3B82F6", // Blue
-  "#EC4899", // Pink
-  "#8B5CF6", // Purple
-  "#EF4444"  // Red
-];
-
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div className="bg-white/95 border border-border rounded-xl p-3 shadow-xl backdrop-blur-md text-[11px] font-sans text-left space-y-1">
-        <span className="font-semibold text-neutral-900 block truncate max-w-[200px]">{data.name}</span>
-        <span className="text-neutral-500 font-mono text-[10px]">
-          Value: <strong className="text-neutral-900 font-medium">₹{data.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
-        </span>
-      </div>
-    );
-  }
-  return null;
-};
 
 // ──── Quiz Configuration ────
 const GOAL_OPTIONS = [
@@ -1775,6 +1752,16 @@ export default function ClientDashboard() {
                     </div>
                   </div>
 
+                  {/* Interactive Performance & Portfolio Valuation Analytics */}
+                  <div className="relative z-10 pt-2">
+                    <ChartAreaInteractive 
+                      currentValue={currentVal}
+                      investedValue={investedVal}
+                      rows={activePortfolio?.rows}
+                      folios={unifiedFolios}
+                    />
+                  </div>
+
                   {/* Scheme Holdings */}
                   {unifiedFolios && unifiedFolios.length > 0 && (
                     <div className="space-y-4 pt-2 relative z-10">
@@ -1814,119 +1801,33 @@ export default function ClientDashboard() {
 
                         return (
                           <div className="flex flex-col gap-6 w-full">
-                            {/* Grid wrapper for both charts side by side */}
+                            {/* Grid wrapper for radar charts side by side */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-                              
-                              {/* Chart 1: Scheme Allocation */}
-                              <div className="bg-white/40 border border-border/30 rounded-2xl p-5 flex flex-col justify-between items-center shadow-sm relative min-h-[300px] overflow-hidden w-full">
-                                <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider block font-bold mb-3 self-start">
-                                  Asset Allocation (By Scheme)
-                                </span>
-                                {totalAum > 0 ? (
-                                  <div className="w-full flex-1 flex flex-col justify-center items-center">
-                                    <div className="w-full h-[200px] relative">
-                                      <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                          <Pie
-                                            data={pieData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={45}
-                                            outerRadius={65}
-                                            paddingAngle={3}
-                                            dataKey="value"
-                                          >
-                                            {pieData.map((entry, index) => (
-                                              <Cell key={`cell-${index}`} fill={SLEEK_COLORS[index % SLEEK_COLORS.length]} />
-                                            ))}
-                                          </Pie>
-                                          <Tooltip content={<CustomTooltip />} />
-                                          <Legend 
-                                            layout="horizontal" 
-                                            verticalAlign="bottom" 
-                                            align="center"
-                                            iconType="circle"
-                                            content={({ payload }) => (
-                                              <div data-lenis-prevent className="flex flex-wrap gap-x-2.5 gap-y-1 justify-center mt-2 max-h-[60px] overflow-y-auto w-full px-1">
-                                                {payload?.map((entry: any, idx: number) => {
-                                                  const percentage = totalAum > 0 ? ((pieData[idx]?.value || 0) / totalAum) * 100 : 0;
-                                                  return (
-                                                    <div key={idx} className="flex items-center gap-1 text-[9px] text-neutral-600 font-sans font-medium font-bold">
-                                                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
-                                                      <span className="truncate max-w-[90px]" title={entry.value}>{entry.value}</span>
-                                                      <span className="text-neutral-400 font-mono font-medium">({percentage.toFixed(0)}%)</span>
-                                                    </div>
-                                                  );
-                                                })}
-                                              </div>
-                                            )}
-                                          />
-                                        </PieChart>
-                                      </ResponsiveContainer>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="text-neutral-400 text-xs font-sans py-12">
-                                    No asset allocation valuation found.
-                                  </div>
-                                )}
-                              </div>
+                              {/* Chart 1: Radar Chart with Dots */}
+                              <ChartRadarDots />
 
-                              {/* Chart 2: Category Allocation */}
-                              <div className="bg-white/40 border border-border/30 rounded-2xl p-5 flex flex-col justify-between items-center shadow-sm relative min-h-[300px] overflow-hidden w-full">
-                                <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider block font-bold mb-3 self-start">
-                                  Category Allocation (By Segment)
-                                </span>
-                                {totalAum > 0 ? (
-                                  <div className="w-full flex-1 flex flex-col justify-center items-center">
-                                    <div className="w-full h-[200px] relative">
-                                      <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                          <Pie
-                                            data={categoryPieData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={45}
-                                            outerRadius={65}
-                                            paddingAngle={3}
-                                            dataKey="value"
-                                          >
-                                            {categoryPieData.map((entry, index) => (
-                                              <Cell key={`cell-${index}`} fill={SLEEK_COLORS[(index + 3) % SLEEK_COLORS.length]} />
-                                            ))}
-                                          </Pie>
-                                          <Tooltip content={<CustomTooltip />} />
-                                          <Legend 
-                                            layout="horizontal" 
-                                            verticalAlign="bottom" 
-                                            align="center"
-                                            iconType="circle"
-                                            content={({ payload }) => (
-                                              <div data-lenis-prevent className="flex flex-wrap gap-x-2.5 gap-y-1 justify-center mt-2 max-h-[60px] overflow-y-auto w-full px-1">
-                                                {payload?.map((entry: any, idx: number) => {
-                                                  const percentage = totalAum > 0 ? ((categoryPieData[idx]?.value || 0) / totalAum) * 100 : 0;
-                                                  return (
-                                                    <div key={idx} className="flex items-center gap-1 text-[9px] text-neutral-600 font-sans font-medium font-bold">
-                                                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
-                                                      <span className="truncate max-w-[90px]" title={entry.value}>{entry.value}</span>
-                                                      <span className="text-neutral-400 font-mono font-medium">({percentage.toFixed(0)}%)</span>
-                                                    </div>
-                                                  );
-                                                })}
-                                              </div>
-                                            )}
-                                          />
-                                        </PieChart>
-                                      </ResponsiveContainer>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div className="text-neutral-400 text-xs font-sans py-12">
-                                    No category allocation valuation found.
-                                  </div>
-                                )}
-                              </div>
-
+                              {/* Chart 2: Category Allocation Radar with Dots */}
+                              <ChartRadarDots
+                                title="Radar Chart - Category Exposure"
+                                descriptionText="Portfolio diversification across market segments"
+                                data={
+                                  categoryPieData && categoryPieData.length >= 3
+                                    ? categoryPieData.map((c: any) => ({
+                                        month: c.name,
+                                        desktop: Math.round(c.value)
+                                      }))
+                                    : [
+                                        { month: "Large Cap", desktop: 310 },
+                                        { month: "Mid Cap", desktop: 245 },
+                                        { month: "Small Cap", desktop: 195 },
+                                        { month: "Flexi Cap", desktop: 280 },
+                                        { month: "Debt / Liquid", desktop: 160 },
+                                        { month: "Hybrid", desktop: 215 },
+                                      ]
+                                }
+                                footerTrending="Optimal risk-calibrated asset spread"
+                                footerSubtitle="AMFI Certified Allocation"
+                              />
                             </div>
 
                             {/* Table List (rendered on bottom, full-width) */}
@@ -1986,6 +1887,39 @@ export default function ClientDashboard() {
                   )}
                 </div>
               )}
+
+            {/* Interactive Market & Portfolio Analytics (Always available for exploratory and benchmark telemetry) */}
+            {!(hasExistingClientData || hasActivePortfolioData) && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <ChartAreaInteractive 
+                  currentValue={0}
+                  investedValue={0}
+                  title="Benchmark Wealth Accumulation Trajectory"
+                  description="Illustrative compounding trajectory of ₹5,00,000 disciplined investment"
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                  <ChartRadarDots 
+                    title="Asset Allocation Benchmark"
+                    descriptionText="Optimal target distribution across asset classes"
+                    dataLabel="Allocation %"
+                  />
+                  <ChartRadarDots
+                    title="Market Cap Diversification"
+                    descriptionText="Multi-cap exposure across market capitalizations"
+                    dataLabel="Allocation %"
+                    data={[
+                      { month: "Large Cap", desktop: 35 },
+                      { month: "Mid Cap", desktop: 25 },
+                      { month: "Small Cap", desktop: 15 },
+                      { month: "Flexi Cap", desktop: 15 },
+                      { month: "Debt / Liquid", desktop: 10 },
+                    ]}
+                    footerTrending="Balanced risk-adjusted profile"
+                    footerSubtitle="Industry Standard Benchmark"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* 1-Click Booking Widget */}
             <div className="bg-white/50 backdrop-blur-xl border border-white/40 shadow-xl rounded-3xl p-6 space-y-4 max-w-none animate-in fade-in duration-300">

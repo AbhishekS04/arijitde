@@ -104,6 +104,11 @@
     --sidebar-accent-foreground: #000000;
     --sidebar-border: rgba(0, 0, 0, 0.1);
     --sidebar-ring: #000000;
+    --chart-1: #6366F1;
+    --chart-2: #10B981;
+    --chart-3: #F59E0B;
+    --chart-4: #8B5CF6;
+    --chart-5: #EC4899;
 }
 
 .dark {
@@ -138,6 +143,11 @@
     --sidebar-accent-foreground: #000000;
     --sidebar-border: rgba(0, 0, 0, 0.1);
     --sidebar-ring: #000000;
+    --chart-1: #6366F1;
+    --chart-2: #10B981;
+    --chart-3: #F59E0B;
+    --chart-4: #8B5CF6;
+    --chart-5: #EC4899;
 }
 
 @layer base {

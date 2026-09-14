@@ -1044,25 +1044,25 @@ export default function Home() {
                                   RISK MITIGATION & PROTECTION
                                 </span>
                                 <h4 className="text-xl sm:text-2xl font-bold text-primary font-chillax mt-2 mb-1">
-                                  Life Insurance & Capital Shield
+                                  Life Insurance
                                 </h4>
                                 <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
-                                  Shielding your family&apos;s future, safeguarding physical assets, and providing health emergency liquidity across generations.
+                                  Shielding your family&apos;s future with guaranteed term protection, endowment planning, and life coverage across generations.
                                 </p>
                               </div>
 
                               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border/50">
                                 <div className="p-3.5 rounded-2xl bg-white/75 border border-white/80">
-                                  <span className="text-[9px] font-mono font-bold uppercase text-primary font-mono block mb-1">LIC Life Insurance</span>
-                                  <p className="text-xs text-muted-foreground font-sans">Guaranteed term protection & endowment plans.</p>
+                                  <span className="text-[9px] font-mono font-bold uppercase text-primary font-mono block mb-1">LIC Term Protection</span>
+                                  <p className="text-xs text-muted-foreground font-sans">Pure family income protection & high-cover term plans.</p>
                                 </div>
                                 <div className="p-3.5 rounded-2xl bg-white/75 border border-white/80">
-                                  <span className="text-[9px] font-mono font-bold uppercase text-primary font-mono block mb-1">Mediclaim Health</span>
-                                  <p className="text-xs text-muted-foreground font-sans">Complete medical inflation & hospitalization cover.</p>
+                                  <span className="text-[9px] font-mono font-bold uppercase text-primary font-mono block mb-1">Endowment & Savings</span>
+                                  <p className="text-xs text-muted-foreground font-sans">Guaranteed maturity payouts, bonus growth & security.</p>
                                 </div>
                                 <div className="p-3.5 rounded-2xl bg-white/75 border border-white/80">
-                                  <span className="text-[9px] font-mono font-bold uppercase text-primary font-mono block mb-1">PNB Housing</span>
-                                  <p className="text-xs text-muted-foreground font-sans">Structured home construction & loan solutions.</p>
+                                  <span className="text-[9px] font-mono font-bold uppercase text-primary font-mono block mb-1">Pension & Annuity</span>
+                                  <p className="text-xs text-muted-foreground font-sans">Lifelong guaranteed retirement income & pension plans.</p>
                                 </div>
                               </div>
                             </div>
